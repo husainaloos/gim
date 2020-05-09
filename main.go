@@ -29,22 +29,25 @@ func main() {
 		log.Fatalf("failed to init screen: %v", err)
 	}
 
-	if len(os.Args) > 1 {
-		filename := os.Args[1]
-		buf, err := NewBuffer(filename)
-		if err != nil {
-			log.Fatalf("cannot create buffer: %v", err)
-		}
-
-		x, y := screen.Size()
-		bv := &BufferView{
-			Buf:       buf,
-			StartLine: 0,
-			Height:    y,
-			Width:     x,
-		}
-		bv.Draw(screen)
+	if len(os.Args) <= 1 {
+		log.Fatalf("file name must be provided")
 	}
+
+	filename := os.Args[1]
+	buf, err := NewBuffer(filename)
+	if err != nil {
+		log.Fatalf("cannot create buffer: %v", err)
+	}
+
+	x, y := screen.Size()
+	bv := &BufferView{
+		Buf:       buf,
+		StartLine: 0,
+		Height:    y,
+		Width:     x,
+		Cursor:    &CursorLocation{0, 0},
+	}
+	bv.Draw(screen)
 
 	cursor = &CursorLocation{0, 0}
 	screen.ShowCursor(cursor.X, cursor.Y)
@@ -70,20 +73,13 @@ func main() {
 			//TODO: currently arrow keys support virtual edit mode
 			// need to be fixed at some point
 			if key == tcell.KeyUp {
-				if cursor.Y > 0 {
-					cursor.Y--
-					screen.ShowCursor(cursor.X, cursor.Y)
-					screen.Show()
-				}
+				bv.MoveCursorUp(screen)
+				screen.Show()
 				continue
 			}
 			if key == tcell.KeyDown {
-				_, y := screen.Size()
-				if cursor.Y < y-1 {
-					cursor.Y++
-					screen.ShowCursor(cursor.X, cursor.Y)
-					screen.Show()
-				}
+				bv.MoveCursorDown(screen)
+				screen.Show()
 				continue
 			}
 			if key == tcell.KeyRight {
