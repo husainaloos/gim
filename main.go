@@ -49,6 +49,7 @@ func main() {
 
 	for {
 		event := screen.PollEvent()
+
 		log.Printf("received key press: %#v", event)
 
 		switch e := event.(type) {
@@ -63,12 +64,15 @@ func main() {
 				log.Println("the key is control c")
 				goto exit
 			}
+			//TODO: currently arrow keys support virtual edit mode
+			// need to be fixed at some point
 			if key == tcell.KeyUp {
 				if cursor.Y > 0 {
 					cursor.Y--
 					screen.ShowCursor(cursor.X, cursor.Y)
 					screen.Show()
 				}
+				continue
 			}
 			if key == tcell.KeyDown {
 				_, y := screen.Size()
@@ -77,6 +81,7 @@ func main() {
 					screen.ShowCursor(cursor.X, cursor.Y)
 					screen.Show()
 				}
+				continue
 			}
 			if key == tcell.KeyRight {
 				x, _ := screen.Size()
@@ -85,6 +90,7 @@ func main() {
 					screen.ShowCursor(cursor.X, cursor.Y)
 					screen.Show()
 				}
+				continue
 			}
 			if key == tcell.KeyLeft {
 				if cursor.X > 0 {
@@ -92,8 +98,30 @@ func main() {
 					screen.ShowCursor(cursor.X, cursor.Y)
 					screen.Show()
 				}
+				continue
 			}
+			if key == tcell.KeyBackspace || key == tcell.KeyBackspace2 || key == tcell.KeyCtrlH {
+				// TODO: support for backspace when performed at the beginning of the line
+				// in such case the lines join together
+				if cursor.X > 0 {
+					x, _ := screen.Size()
+					for i := cursor.X; i < x; i++ {
+						a, b, c, _ := screen.GetContent(i, cursor.Y)
+						screen.SetContent(i-1, cursor.Y, a, b, c)
+					}
+					screen.SetContent(x-1, cursor.Y, ' ', nil, tcell.StyleDefault)
+					cursor.X--
+					screen.ShowCursor(cursor.X, cursor.Y)
+					screen.Show()
+				}
+			}
+
 			if key == tcell.KeyRune {
+				x, _ := screen.Size()
+				for i := x - 1; i > cursor.X; i-- {
+					r, c, s, _ := screen.GetContent(i-1, cursor.Y)
+					screen.SetContent(i, cursor.Y, r, c, s)
+				}
 				printRune(screen, cursor, e.Rune())
 				screen.ShowCursor(cursor.X, cursor.Y)
 				screen.Show()

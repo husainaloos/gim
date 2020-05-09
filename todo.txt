@@ -4,7 +4,7 @@ things I want to support
 - [x] typing txt
 - [x] opening file
 - [x] arrow navigation (up and down, left and write) ignoring wrapping
-- [] backspace support
+- [x] backspace support
 - [] enter support
 - [] save file support (ctrl-s for now)
 - [] support for insert and normal mode (enter insert mode with i)
