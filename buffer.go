@@ -43,29 +43,46 @@ func NewBuffer(filepath string) (*Buffer, error) {
 	}, nil
 }
 
-// Load loads the buffer to the screen. This clears the already existing
-// content on the screen and replaces it with the content of the buffer. The
-// content is alwasy from the beginning of the buffer
-func (buf *Buffer) Load(screen tcell.Screen) error {
-	maxx, maxy := screen.Size()
-	cursor := &CursorLocation{0, 0}
-	screen.Clear()
-	for _, line := range buf.lines {
-		cursor.X = 0
-		for _, r := range line {
-			//TODO: implement wrapping
-			if cursor.X >= maxx {
-				break
-			}
+// BufferView is the view to the buffer. Buffers are not displayed completely
+// in the window. Only a section of the buffer is displayed.
+type BufferView struct {
 
-			screen.SetContent(cursor.X, cursor.Y, r, nil, tcell.StyleDefault)
-			cursor.X++
-		}
-		cursor.Y++
-		if cursor.Y >= maxy {
-			break
-		}
+	// Buf is the buffer associated with the view
+	Buf *Buffer
+
+	// StartLine is the starting line in the buffer
+	StartLine int
+
+	// Height of the view
+	Height int
+
+	// Width of the view
+	Width int
+}
+
+// Draw draws the buffer on the screen. Currently, error is alwasy nil.
+func (bv *BufferView) Draw(screen tcell.Screen) error {
+	screen.Clear()
+	if bv.StartLine > len(bv.Buf.lines) {
+		return nil
 	}
 
+	cursor := CursorLocation{0, 0}
+	linecount := 0
+	i := bv.StartLine
+	for linecount < bv.Height && i < len(bv.Buf.lines) {
+		line := bv.Buf.lines[i]
+		for _, r := range line {
+			screen.SetContent(cursor.X, cursor.Y, r, nil, tcell.StyleDefault)
+			cursor.X++
+			if cursor.X >= bv.Width {
+				break
+			}
+		}
+		cursor.X = 0
+		cursor.Y++
+		i++
+		linecount++
+	}
 	return nil
 }

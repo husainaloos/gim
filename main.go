@@ -36,7 +36,14 @@ func main() {
 			log.Fatalf("cannot create buffer: %v", err)
 		}
 
-		buf.Load(screen)
+		x, y := screen.Size()
+		bv := &BufferView{
+			Buf:       buf,
+			StartLine: 0,
+			Height:    y,
+			Width:     x,
+		}
+		bv.Draw(screen)
 	}
 
 	cursor = &CursorLocation{0, 0}

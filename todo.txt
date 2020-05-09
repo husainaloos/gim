@@ -5,13 +5,13 @@ things I want to support
 - [x] opening file
 - [x] arrow navigation (up and down, left and write) ignoring wrapping
 - [x] backspace support
+- [] enter support
+- [] implement arrow to consodier wrapping (right and left)
 - [] save file support (ctrl-s for now)
   to support this, I will need to start creating the structure of the file
   it appears that it is easy to think of a file as a list of line. most source codes
   are stuctured that way anyway. and this is the pattern used in micro and neovim. However
   neovim uses a tree structure, which is more optimized, yet more complex. I think I can start
   with line array view (similar to micro) and see if I really need a more complex view.
-- [] enter support
 - [] support for insert and normal mode (enter insert mode with i)
 - [] indication that it is insert mode (status at the bottom)
-- [] implement arrow to consodier wrapping (right and left)
