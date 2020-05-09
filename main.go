@@ -100,6 +100,11 @@ func main() {
 				}
 				continue
 			}
+			if key == tcell.KeyEnter {
+				// TODO: this is dependent on understanding lines in the code
+				// probably need to be implemented when I have a good idea of what
+				// a buffer is.
+			}
 			if key == tcell.KeyBackspace || key == tcell.KeyBackspace2 || key == tcell.KeyCtrlH {
 				// TODO: support for backspace when performed at the beginning of the line
 				// in such case the lines join together
