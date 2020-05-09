@@ -1,0 +1,12 @@
+things I want to support
+
+// to be remotely useful
+- [] typing txt
+- [] opening file
+- [] arrow navigation (up and down, left and write) ignoring wrapping
+- [] backspace support
+- [] enter support
+- [] save file support (ctrl-s for now)
+- [] support for insert and normal mode (enter insert mode with i)
+- [] indication that it is insert mode (status at the bottom)
+- [] implement arrow to consodier wrapping (right and left)
