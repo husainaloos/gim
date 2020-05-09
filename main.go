@@ -1,8 +1,6 @@
 package main
 
 import (
-	"io"
-	"io/ioutil"
 	"log"
 	"os"
 
@@ -16,7 +14,7 @@ type CursorLocation struct {
 
 func main() {
 	cursor := &CursorLocation{0, 0}
-	logf, err := os.OpenFile("./tmp/gim.log", os.O_RDWR|os.O_CREATE, 0755)
+	logf, err := os.OpenFile("./tmp/gim.log", os.O_RDWR|os.O_CREATE, 0644)
 	if err != nil {
 		log.Fatalf("failed to create log file: %v", err)
 	}
@@ -33,14 +31,12 @@ func main() {
 
 	if len(os.Args) > 1 {
 		filename := os.Args[1]
-		file, err := os.Open(filename)
+		buf, err := NewBuffer(filename)
 		if err != nil {
-			log.Fatalf("failed to open file: %v", err)
+			log.Fatalf("cannot create buffer: %v", err)
 		}
-		defer file.Close()
-		if err := loadReader(screen, file); err != nil {
-			log.Fatalf("failed to load file: %v", err)
-		}
+
+		buf.Load(screen)
 	}
 
 	cursor = &CursorLocation{0, 0}
@@ -143,26 +139,6 @@ func main() {
 
 exit:
 	log.Printf("application ends")
-}
-
-func loadReader(screen tcell.Screen, reader io.Reader) error {
-	content, err := ioutil.ReadAll(reader)
-	if err != nil {
-		return err
-	}
-
-	tmpCursor := &CursorLocation{0, 0}
-	str := string(content)
-	for _, r := range str {
-		_, y := screen.Size()
-		if tmpCursor.Y >= y {
-			break
-		}
-
-		printRune(screen, tmpCursor, r)
-	}
-
-	return nil
 }
 
 func printRune(screen tcell.Screen, cursor *CursorLocation, r rune) {
