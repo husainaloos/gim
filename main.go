@@ -49,6 +49,8 @@ func main() {
 
 	for {
 		event := screen.PollEvent()
+		log.Printf("received key press: %#v", event)
+
 		switch e := event.(type) {
 		case *tcell.EventError:
 			log.Printf("event_error: %v", e)
@@ -61,13 +63,42 @@ func main() {
 				log.Println("the key is control c")
 				goto exit
 			}
+			if key == tcell.KeyUp {
+				if cursor.Y > 0 {
+					cursor.Y--
+					screen.ShowCursor(cursor.X, cursor.Y)
+					screen.Show()
+				}
+			}
+			if key == tcell.KeyDown {
+				_, y := screen.Size()
+				if cursor.Y < y-1 {
+					cursor.Y++
+					screen.ShowCursor(cursor.X, cursor.Y)
+					screen.Show()
+				}
+			}
+			if key == tcell.KeyRight {
+				x, _ := screen.Size()
+				if cursor.X < x-1 {
+					cursor.X++
+					screen.ShowCursor(cursor.X, cursor.Y)
+					screen.Show()
+				}
+			}
+			if key == tcell.KeyLeft {
+				if cursor.X > 0 {
+					cursor.X--
+					screen.ShowCursor(cursor.X, cursor.Y)
+					screen.Show()
+				}
+			}
 			if key == tcell.KeyRune {
 				printRune(screen, cursor, e.Rune())
 				screen.ShowCursor(cursor.X, cursor.Y)
 				screen.Show()
 				break
 			}
-			log.Printf("cannot determine the type of key pressed")
 		case *tcell.EventMouse:
 			log.Printf("event_mouse: %v", e)
 		case *tcell.EventResize:

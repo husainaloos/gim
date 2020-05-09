@@ -1,9 +1,9 @@
 things I want to support
 
 // to be remotely useful
-- [] typing txt
-- [] opening file
-- [] arrow navigation (up and down, left and write) ignoring wrapping
+- [x] typing txt
+- [x] opening file
+- [x] arrow navigation (up and down, left and write) ignoring wrapping
 - [] backspace support
 - [] enter support
 - [] save file support (ctrl-s for now)
