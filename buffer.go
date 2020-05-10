@@ -120,9 +120,13 @@ func (bv *BufferView) MoveCursorDown(screen tcell.Screen) {
 		return
 	}
 
-	// TODO: should adjust the cursor to be not beyond the last element of
-	// the line
 	bv.Cursor.Y++
+	if bv.Cursor.X > bv.numberOfRunesInBufferLine()-1 {
+		bv.Cursor.X = bv.numberOfRunesInBufferLine() - 1
+	}
+	if bv.Cursor.X < 0 {
+		bv.Cursor.X = 0
+	}
 	screen.ShowCursor(bv.Cursor.X, bv.Cursor.Y)
 }
 
@@ -142,9 +146,13 @@ func (bv *BufferView) MoveCursorUp(screen tcell.Screen) {
 		return
 	}
 
-	// TODO: should adjust the cursor to be not beyond the last element of
-	// the line
 	bv.Cursor.Y--
+	if bv.Cursor.X > bv.numberOfRunesInBufferLine()-1 {
+		bv.Cursor.X = bv.numberOfRunesInBufferLine() - 1
+	}
+	if bv.Cursor.X < 0 {
+		bv.Cursor.X = 0
+	}
 	screen.ShowCursor(bv.Cursor.X, bv.Cursor.Y)
 }
 
@@ -152,8 +160,7 @@ func (bv *BufferView) MoveCursorUp(screen tcell.Screen) {
 // happens. If the cursor is at the end of a view, then the view moves to the
 // right.
 func (bv *BufferView) MoveCursorRight(screen tcell.Screen) {
-	currentLine := bv.Buf.lines[bv.cursorLineIndexInBuffer()]
-	if bv.Cursor.X >= utf8.RuneCountInString(currentLine)-1 {
+	if bv.Cursor.X >= bv.numberOfRunesInBufferLine()-1 {
 		return
 	}
 
@@ -206,4 +213,9 @@ func (bv *BufferView) cursorLineIndexInBuffer() int {
 		v = len(bv.Buf.lines) - 1
 	}
 	return v
+}
+
+func (bv *BufferView) numberOfRunesInBufferLine() int {
+	i := bv.cursorLineIndexInBuffer()
+	return utf8.RuneCountInString(bv.Buf.lines[i])
 }
