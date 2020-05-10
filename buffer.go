@@ -48,6 +48,13 @@ func NewBuffer(filepath string) (*Buffer, error) {
 	}, nil
 }
 
+func (buf *Buffer) InsertRune(r rune, linenum, linecol int) {
+	line := buf.lines[linenum]
+	runes := []rune(line)
+	runes = append(runes[:linecol], append([]rune{r}, runes[linecol:]...)...)
+	buf.lines[linenum] = string(runes)
+}
+
 // BufferView is the view to the buffer. Buffers are not displayed completely
 // in the window. Only a section of the buffer is displayed.
 type BufferView struct {
@@ -96,6 +103,7 @@ func (bv *BufferView) Draw(screen tcell.Screen) {
 		i++
 		linecount++
 	}
+	screen.ShowCursor(bv.Cursor.X, bv.Cursor.Y)
 }
 
 // MoveCursorDown by one step. If the cursor exceeds the screen size downward,
@@ -218,4 +226,12 @@ func (bv *BufferView) cursorLineIndexInBuffer() int {
 func (bv *BufferView) numberOfRunesInBufferLine() int {
 	i := bv.cursorLineIndexInBuffer()
 	return utf8.RuneCountInString(bv.Buf.lines[i])
+}
+
+func (bv *BufferView) InsertRune(screen tcell.Screen, r rune) {
+	lineNum := bv.Cursor.Y + bv.StartLine
+	lineCol := bv.Cursor.X + bv.StartColumn
+	bv.Buf.InsertRune(r, lineNum, lineCol)
+	bv.Cursor.X++
+	bv.Draw(screen)
 }

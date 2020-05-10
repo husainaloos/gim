@@ -114,13 +114,7 @@ func main() {
 			}
 
 			if key == tcell.KeyRune {
-				x, _ := screen.Size()
-				for i := x - 1; i > cursor.X; i-- {
-					r, c, s, _ := screen.GetContent(i-1, cursor.Y)
-					screen.SetContent(i, cursor.Y, r, c, s)
-				}
-				printRune(screen, cursor, e.Rune())
-				screen.ShowCursor(cursor.X, cursor.Y)
+				bv.InsertRune(screen, e.Rune())
 				screen.Show()
 				break
 			}
@@ -150,13 +144,4 @@ func printRune(screen tcell.Screen, cursor *CursorLocation, r rune) {
 	}
 	screen.SetContent(cursor.X, cursor.Y, r, nil, tcell.StyleDefault)
 	cursor.X++
-}
-
-func moveCursor(screen tcell.Screen, cursor *CursorLocation) {
-	cursor.X++
-	x, _ := screen.Size()
-	if cursor.X >= x {
-		cursor.X = 0
-		cursor.Y++
-	}
 }
