@@ -50,8 +50,13 @@ type BufferView struct {
 	// Buf is the buffer associated with the view
 	Buf *Buffer
 
-	// StartLine is the starting line in the buffer
+	// StartLine is the starting line in the buffer. This is in case the
+	// view is scrolled down.
 	StartLine int
+
+	// StartColumn is the column at which the view beings. This is needed
+	// in case the view is scrolled to the right.
+	StartColumn int
 
 	// Height of the view
 	Height int
@@ -67,17 +72,14 @@ type BufferView struct {
 func (bv *BufferView) Draw(screen tcell.Screen) {
 	screen.Clear()
 
-	// do nothing if we exceeded the lines
-	if bv.StartLine > len(bv.Buf.lines) {
-		return
-	}
-
-	cursor := CursorLocation{0, 0}
+	cursor := &CursorLocation{0, 0}
 	linecount := 0
 	i := bv.StartLine
 	for linecount < bv.Height && i < len(bv.Buf.lines) {
 		line := bv.Buf.lines[i]
-		for _, r := range line {
+		runes := []rune(line)
+		for j := bv.StartColumn; j < len(runes); j++ {
+			r := runes[j]
 			screen.SetContent(cursor.X, cursor.Y, r, nil, tcell.StyleDefault)
 			cursor.X++
 			if cursor.X >= bv.Width {
@@ -139,6 +141,44 @@ func (bv *BufferView) MoveCursorUp(screen tcell.Screen) {
 	screen.ShowCursor(bv.Cursor.X, bv.Cursor.Y)
 }
 
+// MoveCursorRight be one step. If the cursor at the end of a line, nothing
+// happens. If the cursor is at the end of a view, then the view moves to the
+// right.
+func (bv *BufferView) MoveCursorRight(screen tcell.Screen) {
+	currentLine := bv.Buf.lines[bv.cursorLineInBuffer()]
+	if bv.Cursor.X >= len(currentLine)-1 {
+		return
+	}
+
+	if bv.Cursor.X < bv.Width {
+		bv.Cursor.X++
+		screen.ShowCursor(bv.Cursor.X, bv.Cursor.Y)
+		return
+	}
+
+	bv.StartColumn++
+	bv.Draw(screen)
+}
+
+// MoveCursorLeft be one step. If the cursor at the beginning of a line,
+// nothing happens. If the cursor is at the beginning of a view, then the view
+// moves to the left.
+func (bv *BufferView) MoveCursorLeft(screen tcell.Screen) {
+
+	if bv.Cursor.X == 0 && bv.StartColumn == 0 {
+		return
+	}
+
+	if bv.Cursor.X > 0 {
+		bv.Cursor.X--
+		screen.ShowCursor(bv.Cursor.X, bv.Cursor.Y)
+		return
+	}
+
+	bv.StartColumn--
+	bv.Draw(screen)
+}
+
 func (bv *BufferView) cursorAtBottomOfView() bool {
 	return bv.Cursor.Y == bv.Height-1
 }
@@ -152,4 +192,8 @@ func (bv *BufferView) atBottomOfBuffer() bool {
 
 func (bv *BufferView) atTopOfBuffer() bool {
 	return bv.StartLine == 0
+}
+
+func (bv *BufferView) cursorLineInBuffer() int {
+	return bv.StartLine + bv.Cursor.Y
 }

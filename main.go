@@ -83,20 +83,13 @@ func main() {
 				continue
 			}
 			if key == tcell.KeyRight {
-				x, _ := screen.Size()
-				if cursor.X < x-1 {
-					cursor.X++
-					screen.ShowCursor(cursor.X, cursor.Y)
-					screen.Show()
-				}
+				bv.MoveCursorRight(screen)
+				screen.Show()
 				continue
 			}
 			if key == tcell.KeyLeft {
-				if cursor.X > 0 {
-					cursor.X--
-					screen.ShowCursor(cursor.X, cursor.Y)
-					screen.Show()
-				}
+				bv.MoveCursorLeft(screen)
+				screen.Show()
 				continue
 			}
 			if key == tcell.KeyEnter {
