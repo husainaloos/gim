@@ -14,7 +14,7 @@ type CursorLocation struct {
 
 func main() {
 	cursor := &CursorLocation{0, 0}
-	logf, err := os.OpenFile("./tmp/gim.log", os.O_RDWR|os.O_CREATE, 0644)
+	logf, err := os.OpenFile("./tmp/gim.log", os.O_APPEND|os.O_CREATE|os.O_RDWR, 0777)
 	if err != nil {
 		log.Fatalf("failed to create log file: %v", err)
 	}

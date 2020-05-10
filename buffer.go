@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"io"
 	"os"
+	"unicode/utf8"
 
 	"github.com/gdamore/tcell"
 )
@@ -29,6 +30,10 @@ func NewBuffer(filepath string) (*Buffer, error) {
 	line, err := br.ReadString('\n')
 	lines := make([]string, 0)
 	for err != io.EOF {
+		// if the line ends with '\n', then remove it
+		if line[len(line)-1] == '\n' {
+			line = line[:len(line)-1]
+		}
 		lines = append(lines, line)
 		line, err = br.ReadString('\n')
 	}
@@ -115,7 +120,8 @@ func (bv *BufferView) MoveCursorDown(screen tcell.Screen) {
 		return
 	}
 
-	// TODO: consider not moving the cursor beyond the file
+	// TODO: should adjust the cursor to be not beyond the last element of
+	// the line
 	bv.Cursor.Y++
 	screen.ShowCursor(bv.Cursor.X, bv.Cursor.Y)
 }
@@ -136,7 +142,8 @@ func (bv *BufferView) MoveCursorUp(screen tcell.Screen) {
 		return
 	}
 
-	// TODO: consider hadling the case when the cursor is beyond the line
+	// TODO: should adjust the cursor to be not beyond the last element of
+	// the line
 	bv.Cursor.Y--
 	screen.ShowCursor(bv.Cursor.X, bv.Cursor.Y)
 }
@@ -145,8 +152,8 @@ func (bv *BufferView) MoveCursorUp(screen tcell.Screen) {
 // happens. If the cursor is at the end of a view, then the view moves to the
 // right.
 func (bv *BufferView) MoveCursorRight(screen tcell.Screen) {
-	currentLine := bv.Buf.lines[bv.cursorLineInBuffer()]
-	if bv.Cursor.X >= len(currentLine)-1 {
+	currentLine := bv.Buf.lines[bv.cursorLineIndexInBuffer()]
+	if bv.Cursor.X >= utf8.RuneCountInString(currentLine)-1 {
 		return
 	}
 
@@ -164,7 +171,6 @@ func (bv *BufferView) MoveCursorRight(screen tcell.Screen) {
 // nothing happens. If the cursor is at the beginning of a view, then the view
 // moves to the left.
 func (bv *BufferView) MoveCursorLeft(screen tcell.Screen) {
-
 	if bv.Cursor.X == 0 && bv.StartColumn == 0 {
 		return
 	}
@@ -194,6 +200,10 @@ func (bv *BufferView) atTopOfBuffer() bool {
 	return bv.StartLine == 0
 }
 
-func (bv *BufferView) cursorLineInBuffer() int {
-	return bv.StartLine + bv.Cursor.Y
+func (bv *BufferView) cursorLineIndexInBuffer() int {
+	v := bv.StartLine + bv.Cursor.Y
+	if v > len(bv.Buf.lines)-1 {
+		v = len(bv.Buf.lines) - 1
+	}
+	return v
 }
