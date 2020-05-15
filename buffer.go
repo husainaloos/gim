@@ -27,10 +27,6 @@ func NewBuffer(filepath string) (*Buffer, error) {
 	line, err := br.ReadString('\n')
 	lines := make([][]rune, 0)
 	for err != io.EOF {
-		// if the line ends with '\n', then remove it
-		if line[len(line)-1] == '\n' {
-			line = line[:len(line)-1]
-		}
 		lines = append(lines, []rune(line))
 		line, err = br.ReadString('\n')
 	}
