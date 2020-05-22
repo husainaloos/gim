@@ -16,11 +16,11 @@ type BufferView struct {
 	Buf *Buffer
 
 	// StartLine is the starting line in the buffer. This is in case the
-	// view is scrolled down. StartLine starts at 1.
+	// view is scrolled down. StartLine starts at 0.
 	StartLine int
 
 	// StartColumn is the column at which the view beings. This is needed
-	// in case the view is scrolled to the right. StartColumn starts at 1.
+	// in case the view is scrolled to the right. StartColumn starts at 0.
 	StartColumn int
 
 	// Height of the view
@@ -76,8 +76,23 @@ func (bv *BufferView) Draw(screen tcell.Screen) {
 // the then buffer is moved down one step. If nothing to display, then prevent
 // the cursor from moving.
 func (bv *BufferView) MoveCursorDown(screen tcell.Screen) {
-	bv.Cursor.Y++
-	bv.Adjust()
+	// TODO: this implmeentation does not support TAB movement.
+	if bv.currentBufferLine() >= bv.Buf.NumOfLines() {
+		return
+	}
+	if bv.Cursor.Y >= bv.Height-1 {
+		bv.StartLine++
+	} else {
+		bv.Cursor.Y++
+	}
+	maxCol := len(bv.Buf.Line(bv.currentBufferLine()))
+	if bv.currentBufferColumn() >= maxCol {
+		bv.StartColumn = maxCol - bv.Width
+		if bv.StartColumn < 0 {
+			bv.StartColumn = 0
+		}
+		bv.Cursor.X = maxCol - bv.StartColumn - 1
+	}
 	bv.Draw(screen)
 }
 
@@ -85,8 +100,23 @@ func (bv *BufferView) MoveCursorDown(screen tcell.Screen) {
 // then buffer is moved up one step. If nothing to display, then prevent the
 // cursor from moving.
 func (bv *BufferView) MoveCursorUp(screen tcell.Screen) {
-	bv.Cursor.Y--
-	bv.Adjust()
+	// TODO: this implmeentation does not support TAB movement.
+	if bv.currentBufferLine() == 0 {
+		return
+	}
+	if bv.Cursor.Y == 0 {
+		bv.StartLine--
+	} else {
+		bv.Cursor.Y--
+	}
+	maxCol := len(bv.Buf.Line(bv.currentBufferLine()))
+	if bv.currentBufferColumn() >= maxCol {
+		bv.StartColumn = maxCol - bv.Width
+		if bv.StartColumn < 0 {
+			bv.StartColumn = 0
+		}
+		bv.Cursor.X = maxCol - bv.StartColumn - 1
+	}
 	bv.Draw(screen)
 }
 
@@ -94,8 +124,20 @@ func (bv *BufferView) MoveCursorUp(screen tcell.Screen) {
 // happens. If the cursor is at the end of a view, then the view moves to the
 // right.
 func (bv *BufferView) MoveCursorRight(screen tcell.Screen) {
-	bv.Cursor.X++
-	bv.Adjust()
+	// TODO: this implmeentation does not support TAB movement.
+	if bv.currentBufferColumn() >= len(bv.Buf.Line(bv.currentBufferLine()))-1 {
+		if bv.currentBufferLine() == bv.Buf.NumOfLines() {
+			return
+		}
+		bv.Cursor.X = 0
+		bv.Cursor.Y++
+		bv.StartColumn = 0
+	} else if bv.Cursor.X >= bv.Width {
+		bv.Cursor.X = bv.Width - 1
+		bv.StartColumn++
+	} else {
+		bv.Cursor.X++
+	}
 	bv.Draw(screen)
 }
 
@@ -103,8 +145,23 @@ func (bv *BufferView) MoveCursorRight(screen tcell.Screen) {
 // nothing happens. If the cursor is at the beginning of a view, then the view
 // moves to the left.
 func (bv *BufferView) MoveCursorLeft(screen tcell.Screen) {
-	bv.Cursor.X--
-	bv.Adjust()
+	if bv.currentBufferColumn() == 0 {
+		if bv.currentBufferLine() == 0 {
+			return
+		}
+		bv.Cursor.Y--
+		maxCol := len(bv.Buf.Line(bv.currentBufferLine()))
+		bv.Cursor.X = maxCol - 1
+		if bv.Cursor.X >= bv.Width {
+			bv.Cursor.X = bv.Width - 1
+			bv.StartColumn = maxCol - bv.Width
+		}
+	} else if bv.Cursor.X <= 0 {
+		bv.Cursor.X = 0
+		bv.StartColumn--
+	} else {
+		bv.Cursor.X--
+	}
 	bv.Draw(screen)
 }
 
@@ -126,76 +183,13 @@ func (bv *BufferView) InsertRune(screen tcell.Screen, r rune) {
 	lineCol := bv.Cursor.X + bv.StartColumn
 	bv.Buf.InsertRune(r, lineNum, lineCol)
 	bv.Cursor.X++
-	bv.Adjust()
 	bv.Draw(screen)
 }
 
-// Adjust adjusts the current view of the buffer. This means scrolling the
-// BufferView up or down, right of left, if the cursor is out-of-bound. This
-// also adjust the cursor if it is going beyond the Buffer. Also, this adjust
-// the position of the cursor to make sure it is at a valid character.
-func (bv *BufferView) Adjust() {
-	// If the cursor is too far down, then move the view to where the
-	// cursor is at the bottom line of the view.
-	if bv.Cursor.Y > bv.Height {
-		bv.StartLine += bv.Cursor.Y - bv.Height
-	}
+func (bv *BufferView) currentBufferLine() int {
+	return bv.StartLine + bv.Cursor.Y
+}
 
-	// If the cursor is too far up, then move the view up to where the
-	// curosr is at the top line of the view.
-	if bv.Cursor.Y < 0 {
-		bv.StartLine += bv.Cursor.Y
-	}
-
-	// If the view moved down too much, then reset the buffer to display up
-	// to the last line of the file.
-	if bv.StartLine > bv.Buf.NumOfLines() {
-		bv.StartLine = bv.Buf.NumOfLines() - bv.Height
-	}
-
-	// If the view moved up too much, then reset the buffer to display the
-	// first line of the buffer.
-	if bv.StartLine < 0 {
-		bv.StartLine = 0
-	}
-
-	// Do a similar logic for X
-	if bv.Cursor.X > bv.Width {
-		bv.StartColumn += bv.Cursor.X - bv.Width
-	}
-
-	if bv.Cursor.X < 0 {
-		bv.StartColumn -= bv.Cursor.X
-	}
-
-	lineLength := bv.numberOfRunesInBufferLine()
-	if bv.StartColumn > lineLength {
-		bv.StartColumn = lineLength - bv.Width
-	}
-
-	if bv.StartColumn < 0 {
-		bv.StartColumn = 0
-	}
-
-	// Sanity checks that the cursor is not beyond the view.
-	if bv.Cursor.X < 0 {
-		bv.Cursor.X = 0
-	}
-	if bv.Cursor.Y < 0 {
-		bv.Cursor.Y = 0
-	}
-	if bv.Cursor.X >= bv.Width {
-		bv.Cursor.X = bv.Width - 1
-	}
-	if bv.Cursor.Y >= bv.Height {
-		bv.Cursor.Y = bv.Height - 1
-	}
-
-	if bv.Cursor.Y >= bv.Buf.NumOfLines() {
-		bv.Cursor.Y = bv.Buf.NumOfLines() - 1
-	}
-	lineLength = bv.numberOfRunesInBufferLine()
-	if bv.Cursor.X >= lineLength {
-		bv.Cursor.X = lineLength - 1
-	}
+func (bv *BufferView) currentBufferColumn() int {
+	return bv.StartColumn + bv.Cursor.X
 }
